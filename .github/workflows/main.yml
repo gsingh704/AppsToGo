@@ -1,0 +1,24 @@
+name: Build AppsToGo AppImage
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build_App
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build AppImage
+        uses: AppImageCrafters/build-appimage-action@master
+        env:
+          UPDATE_INFO: "gh-releases-zsync|gsingh704/AppsToGo|latest|AppsToGo*.AppImage.zsync"
+        with:
+          recipe: "assets/BuildAppImage.yml"
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: AppsToGo
+          path: |
+            *.AppImage
+            *.zsync

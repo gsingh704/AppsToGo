@@ -1,0 +1,32 @@
+version: 1
+script:
+  - rm -rf AppDir | true
+  - mkdir -p AppDir/usr/src
+  - cp -r src/window.py AppDir/usr/src/window.py
+  - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+  - cp assets/AppsToGo.svg AppDir/usr/share/icons/hicolor/256x256/apps/AppsToGo.svg
+  - apt update && apt install squashfs-tools zsync -y
+
+AppDir:
+  path: ./AppDir
+  app_info:
+    id: org.gurji.AppsToGo
+    name: AppsToGo
+    icon: AppsToGo
+    version: 0.0.1
+    exec: usr/bin/python3
+    exec_args: "$APPDIR/usr/src/window.py $@"
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ lunar main restricted universe multiverse"
+        key_url: "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xf6ecb3762474eda9d21b7022871920d1991bc93c"
+    include:
+      - python3
+      - libgtk-4-dev
+      - python3-gi
+      - libadwaita-1-dev
+      - librsvg2-common
+
+AppImage:
+  arch: x86_64
