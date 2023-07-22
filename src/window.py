@@ -1,13 +1,17 @@
 import os
 import json
+import re
 import shutil
+import string
 import subprocess
 import sys
+import threading
 import gi
+import requests
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, GLib, Gio
+from gi.repository import Gtk, Adw, GLib, Gio, GdkPixbuf
 
 
 class MyApp(Adw.Application):
@@ -17,24 +21,31 @@ class MyApp(Adw.Application):
         self.portable_home_path = ""
         self.appimage_list = []
         self.appimage_rows = []
+        self.dowload_app_rows = []  # Initialize the dowload_app_rows attribute
+        self.dowload_app_group = None  # Initialize the dowload_app_group attribute
 
     def on_activate(self, app):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.toast_overlay = Adw.ToastOverlay(child=box)
+        builder = Gtk.Builder()
+        builder.add_from_file("src/appstogo.ui")
 
-        self.win = Adw.ApplicationWindow(
-            application=self,
-            title="Apps To Go",
-            default_height=400,
-            default_width=600,
-            content=self.toast_overlay,
-        )
-        self.win.add_css_class("devel")
+        self.win = builder.get_object("window")
+        self.win.set_application(self)
         self.win.present()
 
-        adw_header = Adw.HeaderBar(
-            css_classes=["flat"],
+        self.data = self.getData()
+        self.category_filter = None
+
+        self.set_portable_home_button = builder.get_object("set_portable_home_button")
+        self.portable_home_button_content = builder.get_object(
+            "portable_home_button_content"
         )
+        self.toast_overlay = builder.get_object("toast_overlay")
+        self.appimage_group = builder.get_object("appimage_group")
+        self.select_appimage_button = builder.get_object("select_appimage_button")
+        self.header_menu_button = builder.get_object("header_menu_button")
+        adw_header = builder.get_object("adw_header")
+        self.dowload_app_group = builder.get_object("dowload_app_group")
+        self.category_combo = builder.get_object("category_combo")
 
         self.header_menu_button = Gtk.MenuButton(
             icon_name="open-menu-symbolic",
@@ -42,48 +53,35 @@ class MyApp(Adw.Application):
         )
         adw_header.pack_end(self.header_menu_button)
 
-        box2 = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-        )
+        self.set_portable_home_button.set_menu_model(self.set_portable_home_menu())
+        self.select_appimage_button.set_menu_model(self.split_button_menu())
 
-        self.portable_home_button_content = Adw.ButtonContent(
-            icon_name="user-home-symbolic", label="Home"
-        )
-        self.set_portable_home_button = Adw.SplitButton(
-            css_classes=["accent"],
-            margin_bottom=10,
-            margin_end=10,
-            margin_start=10,
-            margin_top=10,
-            tooltip_text="Portable Home",
-            menu_model=self.set_portable_home_menu(),
-            child=self.portable_home_button_content,
-        )
+        self.select_appimage_button.connect("clicked", self.select_appimage)
+        self.set_portable_home_button.connect("clicked", self.set_portable_home)
 
-        select_appimage_button = Adw.SplitButton(
-            icon_name="list-add-symbolic",
-            tooltip_text="Add AppImage",
-            menu_model=self.split_button_menu(),
-        )
-        select_appimage_button.connect("clicked", self.select_appimage)
-
-        self.appimage_group = Adw.PreferencesGroup(
-            title="Appimages",
-            margin_bottom=10,
-            margin_end=10,
-            margin_start=10,
-            margin_top=10,
-            header_suffix=select_appimage_button,
-        )
-
-        box.append(adw_header)
-        box.append(Adw.Clamp(child=box2))
-
-        box2.append(self.set_portable_home_button)
-        box2.append(self.appimage_group)
+        self.category_combo.connect("changed", self.on_category_changed)
+        self.category_combo.append_text("All Categories")
+        self.category_combo.set_active(0)
 
         self.load_portable_home_path_config()
         self.load_appimage_list_from_config()
+        self.populate_categories()
+
+        # Add a "Show More" button
+        self.show_more_button = Gtk.Button(
+            label="Show More",
+            css_classes=["suggested-action"],
+            halign=Gtk.Align.CENTER,
+            margin_top=10,
+        )
+        self.show_more_button.connect("clicked", self.on_show_more_clicked)
+        self.dowload_app_group.add(self.show_more_button)
+
+        self.show_data_batch_size = 10  # Number of rows to load in each batch
+        self.current_data_batch = 0  # Index of the currently loaded data batch
+
+        # Show the initial batch of data
+        self.showData(self.category_filter, self.current_data_batch)
 
     def scan_folder(self, action, param):
         Gtk.FileDialog.select_folder(
@@ -527,7 +525,7 @@ class MyApp(Adw.Application):
     def about(self, action, param):
         diaolog = Adw.AboutWindow(
             application_name="AppsToGo",
-            version="0.1",
+            version="0.0.2",
             comments="A portable app manager",
             website="github.com/gsingh704/AppsToGo",
             developers=["Gurjant Singh"],
@@ -546,6 +544,254 @@ class MyApp(Adw.Application):
         menu = Gio.Menu()
         menu.append("Scan Folder", "app.scan_folder")
         return menu
+
+    def getData(self):
+        url = "https://appimage.github.io/feed.json"
+        response = requests.get(url)
+        data = response.json()
+        return data
+
+    def getData(self):
+        url = "https://appimage.github.io/feed.json"
+        response = requests.get(url)
+        data = response.json()
+        return data
+
+    def showData(self, selected_category=None, data_batch_index=0):
+        items = self.data["items"]
+
+        # Count the number of appimages based on selected category
+        appimages_count = 0
+
+        appimage_io_url = "https://appimage.github.io/database"
+
+        # Calculate the range of items to display based on data_batch_index and show_data_batch_size
+        start_index = data_batch_index * self.show_data_batch_size
+        end_index = min((data_batch_index + 1) * self.show_data_batch_size, len(items))
+
+        # Clear the existing rows in the download app group
+        for row in self.dowload_app_rows:
+            self.dowload_app_group.remove(row)
+        self.dowload_app_rows = []
+
+        # Loop through the items to create and add rows
+        for i in range(start_index, end_index):
+            item = items[i]
+            name = item["name"]
+            categories = item.get("categories", [])
+            authors = item.get("authors", "")
+            authors_name = authors[0]["name"] if authors and len(authors) > 0 else None
+            authors_url = authors[0]["url"] if authors and len(authors) > 0 else None
+            license = item.get("license", "")
+
+            icon = self.get_icon(appimage_io_url, item)
+            screenshot = self.get_image(appimage_io_url, name)
+
+            description = item.get("description", "")
+            # Check if the item should be shown based on selected_category
+            if not selected_category or (selected_category and selected_category in categories):
+                links = item["links"]
+
+                if links is None:
+                    # Skip this item if there are no links available
+                    continue
+
+                # Find the "Download" link
+                download_url = ""
+                for link in links:
+                    if link["type"] == "Download":
+                        download_url = link["url"]
+                        break
+
+                appimage_row = Adw.ExpanderRow(
+                    title=name,
+                )
+                download_button = Gtk.Button(
+                    icon_name="document-save-symbolic",
+                    margin_bottom=10,
+                    margin_end=10,
+                    margin_start=10,
+                    margin_top=10,
+                    css_classes=["suggested-action"],
+                )
+                download_button.connect("clicked", self.on_download_clicked, download_url)
+
+                info_box = Gtk.Box(
+                    orientation=Gtk.Orientation.VERTICAL,
+                    margin_bottom=10,
+                    margin_end=10,
+                    margin_start=10,
+                    margin_top=10,
+                    spacing=10,
+                )
+                author_label = Gtk.Label(
+                    label=f'Author: <a href="{authors_url}">{authors_name}</a>',
+                    margin_bottom=10,
+                    margin_end=10,
+                    margin_start=10,
+                    margin_top=10,
+                    wrap=True,
+                    xalign=0,
+                    use_markup=True,  # Enable markup parsing
+                )
+                license_label = Gtk.Label(
+                    label=f"License: {license}",
+                    margin_bottom=10,
+                    margin_end=10,
+                    margin_start=10,
+                    margin_top=10,
+                    wrap=True,
+                    xalign=0,
+                )
+                description_label = Gtk.Label(
+                    label=f"Description: {description}",
+                    margin_bottom=10,
+                    margin_end=10,
+                    margin_start=10,
+                    margin_top=10,
+                    wrap=True,
+                    xalign=0,
+                )
+
+                info_box.append(author_label)
+                info_box.append(license_label)
+                info_box.append(description_label)
+                info_box.append(screenshot)
+                info_box.append(download_button)
+                appimage_row.add_row(info_box)
+
+                appimage_row.add_prefix(icon)
+                self.dowload_app_group.add(appimage_row)
+                self.dowload_app_rows.append(appimage_row)
+
+                appimages_count += 1
+
+        # Check if there are more items to display
+        has_more_items = end_index < len(items)
+        self.show_more_button.set_visible(has_more_items)
+
+        # Update the title of the download row to reflect the number of appimages
+        self.dowload_app_group.set_title(f"Appimages - {appimages_count}")
+
+        # If "All Categories" is selected, show only 10 download rows
+        if selected_category == "All Categories":
+            self.show_more_button.set_visible(True)
+            self.show_data_batch_size = 10
+        else:
+            self.show_more_button.set_visible(False)
+            self.show_data_batch_size = len(items)
+
+    def on_category_changed(self, combo):
+        # Get the selected category from the combo box
+        active_iter = combo.get_active_iter()
+        if active_iter:
+            self.category_filter = combo.get_model().get_value(active_iter, 0)
+            if self.category_filter == "All Categories":  # Handle the "All" option
+                self.category_filter = None  # Set category_filter to None
+            self.showData(self.category_filter)
+
+    def get_icon(self, appimage_io_url, item):
+        icon_name = item.get("icons", "")
+        icon_name = icon_name[0] if icon_name and len(icon_name) > 0 else None
+        icon_url = appimage_io_url + "/" + icon_name if icon_name else None
+
+        icon = Gtk.Image()
+        icon.set_pixel_size(50)
+        icon.set_from_file("src/placeholder.png")
+
+        if icon_url is not None:  # Check if the icon_url is valid
+            thread = threading.Thread(
+                target=self.fetch_icon, args=(icon, icon_url), daemon=True
+            )
+            thread.start()
+
+        return icon
+
+    def fetch_icon(self, icon, icon_url):
+        try:
+            response = requests.get(icon_url)
+            if response.status_code == 200:
+                loader = GdkPixbuf.PixbufLoader()
+                loader.write(response.content)
+                loader.close()
+                pixbuf = loader.get_pixbuf()
+                if pixbuf is not None:
+                    pixbuf = pixbuf.scale_simple(
+                        300, 300, GdkPixbuf.InterpType.BILINEAR
+                    )
+                    GLib.idle_add(self.set_icon, icon, pixbuf)
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching image: {e}")
+            GLib.idle_add(self.set_icon, icon, None)
+
+    def set_icon(self, icon, pixbuf):
+        if pixbuf is not None:
+            icon.set_from_pixbuf(pixbuf)
+            icon.set_halign(Gtk.Align.CENTER)
+            icon.set_valign(Gtk.Align.CENTER)
+            icon.set_margin_bottom(10)
+            icon.set_margin_end(10)
+            icon.set_margin_start(10)
+            icon.set_margin_top(10)
+        else:
+            icon.set_from_file("src/placeholder.png")
+
+    def get_image(self, appimage_url, name):
+        screenshot_url = appimage_url + "/" + name + "/screenshot.png"
+
+        screenshot = Gtk.Image()
+        screenshot.set_pixel_size(400)
+        screenshot.set_from_file("src/placeholder.png")
+
+        thread = threading.Thread(
+            target=self.fetch_image, args=(screenshot, screenshot_url), daemon=True
+        )
+        thread.start()
+
+        return screenshot
+
+    def fetch_image(self, screenshot, screenshot_url):
+        try:
+            response = requests.get(screenshot_url)
+            if response.status_code == 200:
+                loader = GdkPixbuf.PixbufLoader()
+                loader.write(response.content)
+                loader.close()
+                pixbuf = loader.get_pixbuf()
+                if pixbuf is not None:
+                    GLib.idle_add(self.set_image, screenshot, pixbuf)
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching image: {e}")
+            GLib.idle_add(self.set_image, screenshot, None)
+
+    def set_image(self, screenshot, pixbuf):
+        if pixbuf is not None:
+            screenshot.set_from_pixbuf(pixbuf)
+        else:
+            screenshot.set_from_file("src/placeholder.png")
+
+    def on_download_clicked(self, button, download_url):
+        # Open the download url in the browser
+        Gio.AppInfo.launch_default_for_uri(download_url, None)
+
+    def populate_categories(self):
+        # Collect all unique categories from the data
+        categories = set()
+        for item in self.data["items"]:
+            if "categories" in item:
+                categories.update(item["categories"])
+
+        # Filter out None values from the categories
+        categories = [category for category in categories if category is not None]
+
+        # Add categories to the combo box
+        for category in sorted(categories):
+            self.category_combo.append_text(category)
+
+    def on_show_more_clicked(self, button):
+        # Load the next batch of data and increment the data batch index
+        self.current_data_batch += 1
+        self.showData(self.category_filter, self.current_data_batch)
 
 
 if __name__ == "__main__":
