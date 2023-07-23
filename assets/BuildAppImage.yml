@@ -1,8 +1,8 @@
 version: 1
 script:
   - rm -rf AppDir | true
-  - mkdir -p AppDir/usr/src
-  - cp -r src/ AppDir/usr/
+  - mkdir -p AppDir/
+  - cp -r src/ AppDir/
   - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
   - cp assets/AppsToGo.svg AppDir/usr/share/icons/hicolor/256x256/apps/AppsToGo.svg
   - apt update && apt install squashfs-tools zsync -y
@@ -15,7 +15,7 @@ AppDir:
     icon: AppsToGo
     version: 0.0.2
     exec: usr/bin/python3
-    exec_args: "$APPDIR/usr/src/window.py $@"
+    exec_args: "$APPDIR/src/window.py $@"
   apt:
     arch: amd64
     sources:
