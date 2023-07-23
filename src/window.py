@@ -25,7 +25,7 @@ class MyApp(Adw.Application):
 
     def on_activate(self, app):
         builder = Gtk.Builder()
-        builder.add_from_file("appstogo.ui")
+        builder.add_from_file("/src/appstogo.ui")
 
         self.win = builder.get_object("window")
         self.win.set_application(self)
