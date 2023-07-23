@@ -97,7 +97,9 @@
                                       <object class="GtkBox">
                                         <property name="spacing">10</property>
                                         <child>
-                                          <object class="GtkSearchEntry" id="download_search"/>
+                                          <object class="GtkSearchEntry" id="download_search">
+                                            <property name="margin-start">20</property>
+                                          </object>
                                         </child>
                                         <child>
                                           <object class="GtkComboBoxText" id="category_combo"/>

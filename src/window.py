@@ -45,8 +45,6 @@ class MyApp(Adw.Application):
         adw_header = builder.get_object("adw_header")
         self.dowload_app_group = builder.get_object("dowload_app_group")
         self.category_combo = builder.get_object("category_combo")
-        self.download_search = builder.get_object("download_search")
-
 
         self.header_menu_button = Gtk.MenuButton(
             icon_name="open-menu-symbolic",
@@ -68,9 +66,10 @@ class MyApp(Adw.Application):
         self.load_appimage_list_from_config()
 
         # Show the initial batch of data
+        self.search_entry = builder.get_object("download_search")
+
+        self.search_entry.connect("activate", self.on_search_activated)
         self.showData(self.category_filter)
-
-
 
     def scan_folder(self, action, param):
         Gtk.FileDialog.select_folder(
@@ -552,6 +551,66 @@ class MyApp(Adw.Application):
         )
         thread.start()
 
+    def on_search_activated(self, entry):
+        # Get the search query from the search bar
+        search_query = entry.get_text()
+        self.category_combo.set_active(0)
+
+        # Get the selected category from the combo box
+        active_item = self.category_combo.get_active_iter()
+        if active_item:
+            selected_category = self.category_combo.get_model().get_value(
+                active_item, 0
+            )
+        else:
+            selected_category = None
+
+        # Show the data based on the search query and selected category
+        if not search_query:
+            # If the search query is empty, show apps from the current category
+            self.showData(selected_category)
+        else:
+            # If the search query is not empty, search for apps from all categories
+            self.searchData(search_query)
+
+    def searchData(self, search_query):
+        # Clear the current UI elements before updating with search results
+        for row in self.dowload_app_rows:
+            self.dowload_app_group.remove(row)
+        self.dowload_app_rows = []
+
+        # Start loading search data and images in a new thread
+        thread = threading.Thread(
+            target=self.load_search_data_and_images, args=(search_query,), daemon=True
+        )
+        thread.start()
+
+    def load_search_data_and_images(self, search_query):
+        items = self.data["items"]
+
+        # Filter items that match the search query
+        search_results = []
+        for item in items:
+            name = item.get("name", "")
+            description = item.get("description", "")
+            if (
+                search_query.lower() in name.lower()
+                or search_query.lower() in description.lower()
+            ):
+                search_results.append(item)
+
+        appimage_io_url = "https://appimage.github.io/database"
+
+        # Setup download rows for search results
+        self.setup_download_row(
+            None, search_results, len(search_results), appimage_io_url
+        )
+
+        # Update the title of the download row to reflect the number of search results
+        GLib.idle_add(
+            self.dowload_app_group.set_title, f"Search Results - {len(search_results)}"
+        )
+
     def load_data_and_images(self, selected_category):
         items = self.data["items"]
 
@@ -592,6 +651,9 @@ class MyApp(Adw.Application):
         # Filter out None values from the categories
         categories = [category for category in categories if category is not None]
 
+        # Add "search_result" as the first item in the combo box
+        self.category_combo.append_text("Categories")
+
         # Add categories to the combo box
         for category in sorted(categories):
             self.category_combo.append_text(category)
@@ -628,12 +690,9 @@ class MyApp(Adw.Application):
                         download_url = link["url"]
                         break
 
-                appimage_row = Adw.ExpanderRow(
-                    title=name,
-                    subtitle=categories
-                )
+                appimage_row = Adw.ExpanderRow(title=name, subtitle=categories)
                 download_button = Gtk.Button(
-                    icon_name="document-save-symbolic",
+                    label="Github Release",
                     margin_bottom=10,
                     margin_end=10,
                     margin_start=10,
@@ -681,11 +740,12 @@ class MyApp(Adw.Application):
                     xalign=0,
                 )
 
+                info_box.append(download_button)
                 info_box.append(author_label)
                 info_box.append(license_label)
                 info_box.append(description_label)
                 info_box.append(screenshot)
-                info_box.append(download_button)
+
                 appimage_row.add_row(info_box)
 
                 appimage_row.add_prefix(icon)

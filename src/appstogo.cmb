@@ -82,7 +82,8 @@
 	(2,38,"GtkWidget","margin-top","10",None,None,None,None,None,None,None,None,None),
 	(2,38,"GtkWidget","vexpand","True",None,None,None,None,None,None,None,None,None),
 	(2,38,"GtkWidget","vexpand-set","True",None,None,None,None,None,None,None,None,None),
-	(2,39,"GtkBox","spacing","10",None,None,None,None,None,None,None,None,None)
+	(2,39,"GtkBox","spacing","10",None,None,None,None,None,None,None,None,None),
+	(2,45,"GtkWidget","margin-start","20",None,None,None,None,None,None,None,None,None)
   </object_property>
   <object_data>
 	(2,23,"GtkWidget",1,1,None,None,None),
