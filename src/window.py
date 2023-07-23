@@ -1,13 +1,13 @@
 import os
 import json
-import re
 import shutil
-import string
 import subprocess
 import sys
 import threading
 import gi
 import requests
+import warnings
+
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
@@ -22,6 +22,8 @@ class MyApp(Adw.Application):
         self.appimage_list = []
         self.appimage_rows = []
         self.download_app_rows = []
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 
     def on_activate(self, app):
         self.setup_ui()
