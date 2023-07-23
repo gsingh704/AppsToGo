@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Created with Cambalache 0.12.1 -->
+<interface>
+  <!-- interface-name appstogo.ui -->
+  <requires lib="gtk" version="4.10"/>
+  <requires lib="libadwaita" version="1.3"/>
+  <object class="AdwWindow" id="window">
+    <property name="content">
+      <object class="AdwToastOverlay" id="toast_overlay">
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="AdwHeaderBar" id="adw_header">
+                <property name="title-widget">
+                  <object class="AdwViewSwitcher" id="switcher">
+                    <property name="policy">wide</property>
+                    <property name="stack">stack</property>
+                  </object>
+                </property>
+                <style>
+                  <class name="flat"/>
+                </style>
+              </object>
+            </child>
+            <child>
+              <object class="AdwViewStack" id="stack">
+                <child>
+                  <object class="AdwViewStackPage" id="home_page">
+                    <property name="child">
+                      <object class="GtkScrolledWindow">
+                        <property name="child">
+                          <object class="AdwClamp">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="vexpand">True</property>
+                                <child>
+                                  <object class="AdwSplitButton" id="set_portable_home_button">
+                                    <property name="child">
+                                      <object class="AdwButtonContent" id="portable_home_button_content">
+                                        <property name="icon-name">user-home-symbolic</property>
+                                        <property name="label">Portable Home</property>
+                                      </object>
+                                    </property>
+                                    <property name="margin-bottom">10</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="margin-start">10</property>
+                                    <property name="margin-top">10</property>
+                                    <style>
+                                      <class name="accent"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="AdwPreferencesGroup" id="appimage_group">
+                                    <property name="header-suffix">
+                                      <object class="AdwSplitButton" id="select_appimage_button">
+                                        <property name="icon-name">list-add-symbolic</property>
+                                      </object>
+                                    </property>
+                                    <property name="margin-bottom">10</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="margin-start">10</property>
+                                    <property name="margin-top">10</property>
+                                    <property name="title">AppImages</property>
+                                    <property name="vexpand">True</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </property>
+                      </object>
+                    </property>
+                    <property name="icon-name">user-home-symbolic</property>
+                    <property name="name">home_page</property>
+                    <property name="title">Home</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="AdwViewStackPage" id="download_page">
+                    <property name="child">
+                      <object class="GtkScrolledWindow">
+                        <property name="child">
+                          <object class="AdwClamp">
+                            <property name="child">
+                              <object class="GtkBox" id="download_box">
+                                <property name="margin-bottom">10</property>
+                                <property name="margin-end">10</property>
+                                <property name="margin-start">10</property>
+                                <property name="margin-top">10</property>
+                                <property name="orientation">vertical</property>
+                                <child>
+                                  <object class="AdwPreferencesGroup" id="dowload_app_group">
+                                    <property name="header-suffix">
+                                      <object class="GtkBox">
+                                        <property name="spacing">10</property>
+                                        <child>
+                                          <object class="GtkSearchEntry" id="download_search">
+                                            <property name="margin-start">20</property>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBoxText" id="category_combo"/>
+                                        </child>
+                                      </object>
+                                    </property>
+                                    <property name="margin-bottom">10</property>
+                                    <property name="margin-end">10</property>
+                                    <property name="margin-start">10</property>
+                                    <property name="margin-top">10</property>
+                                    <property name="title">Download</property>
+                                    <property name="vexpand">True</property>
+                                    <property name="vexpand-set">True</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </property>
+                      </object>
+                    </property>
+                    <property name="icon-name">document-save-symbolic</property>
+                    <property name="name">Download</property>
+                    <property name="title">Download</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </property>
+    <property name="default-height">500</property>
+    <property name="default-width">800</property>
+    <style>
+      <class name="devel"/>
+    </style>
+  </object>
+</interface>
