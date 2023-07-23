@@ -55,8 +55,8 @@ class MyApp(Adw.Application):
         )
         self.win = Adw.Window(
             content=self.toast_overlay,
-            default_height=600,
-            default_width=800,
+            default_height=400,
+            default_width=700,
         )
 
         self.header_bar = Adw.HeaderBar(
