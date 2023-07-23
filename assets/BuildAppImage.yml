@@ -27,6 +27,7 @@ AppDir:
       - python3-gi
       - libadwaita-1-dev
       - librsvg2-common
+      - python3-requests
 
 AppImage:
   arch: x86_64
