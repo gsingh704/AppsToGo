@@ -2,7 +2,7 @@ version: 1
 script:
   - rm -rf AppDir | true
   - mkdir -p AppDir/usr/src
-  - cp -r src/* AppDir/usr/src/*
+  - cp -r src/ AppDir/usr/src/
   - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
   - cp assets/AppsToGo.svg AppDir/usr/share/icons/hicolor/256x256/apps/AppsToGo.svg
   - apt update && apt install squashfs-tools zsync -y
