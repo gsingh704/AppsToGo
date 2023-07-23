@@ -24,7 +24,33 @@ class MyApp(Adw.Application):
         self.dowload_app_rows = []
 
     def on_activate(self, app):
-        self.setup_ui()
+        builder = Gtk.Builder()
+        builder.add_from_file("src/appstogo.ui")
+
+        self.win = builder.get_object("window")
+        self.win.set_application(self)
+        self.win.present()
+
+        self.data = self.getData()
+        self.category_filter = None
+
+        self.set_portable_home_button = builder.get_object("set_portable_home_button")
+        self.portable_home_button_content = builder.get_object(
+            "portable_home_button_content"
+        )
+        self.toast_overlay = builder.get_object("toast_overlay")
+        self.appimage_group = builder.get_object("appimage_group")
+        self.select_appimage_button = builder.get_object("select_appimage_button")
+        self.header_menu_button = builder.get_object("header_menu_button")
+        adw_header = builder.get_object("adw_header")
+        self.dowload_app_group = builder.get_object("dowload_app_group")
+        self.category_combo = builder.get_object("category_combo")
+
+        self.header_menu_button = Gtk.MenuButton(
+            icon_name="open-menu-symbolic",
+            menu_model=self.header_menu(),
+        )
+        adw_header.pack_end(self.header_menu_button)
 
         self.set_portable_home_button.set_menu_model(self.set_portable_home_menu())
         self.select_appimage_button.set_menu_model(self.split_button_menu())
@@ -39,99 +65,12 @@ class MyApp(Adw.Application):
         self.load_portable_home_path_config()
         self.load_appimage_list_from_config()
 
+        # Show the initial batch of data
+        self.search_entry = builder.get_object("download_search")
+
         self.search_entry.connect("activate", self.on_search_activated)
         self.showData(self.category_filter)
 
-    def setup_ui(self):
-        self.main_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-        )
-        self.toast_overlay = Adw.ToastOverlay(
-            child=self.main_box,
-        )
-        self.win = Adw.Window(
-            content=self.toast_overlay,
-        )
-
-        self.stack = Adw.ViewStack()
-
-        self.header_bar = Adw.HeaderBar(
-            title_widget=Adw.ViewSwitcher(
-                stack=self.stack,
-            ),
-        )
-        self.header_menu_button = Gtk.MenuButton(
-            icon_name="open-menu-symbolic",
-            menu_model=self.header_menu(),
-        )
-        self.header_bar.pack_end(self.header_menu_button)
-
-        self.home_page_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-        )
-
-        self.set_portable_home_button_content = Adw.ButtonContent(
-            label="Not set",
-            icon_name="user-home-symbolic",
-        )
-
-        self.set_portable_home_button = Adw.SplitButton(
-            child=self.set_portable_home_button_content,
-            menu_model=self.set_portable_home_menu(),
-        )
-
-        self.select_appimage_button = Adw.SplitButton(
-            icon_name="list-add-symbolic",
-            menu_model=self.split_button_menu(),
-        )
-
-        self.appimage_group = Adw.PreferencesGroup(
-            header_suffix=self.select_appimage_button,
-            title="AppImages",
-        )
-
-        self.download_header_box = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL,
-        )
-
-        self.search_entry = (Gtk.SearchEntry(),)
-        self.category_combo = (Gtk.ComboBoxText(),)
-
-        self.download_app_group = Adw.PreferencesGroup(
-            title="Download",
-            header_suffix=self.download_header_box,
-        )
-        self.home_page = Adw.ViewStackPage(
-            title="Home",
-            icon_name="user-home-symbolic",
-            child=Gtk.ScrolledWindow(
-                child=Adw.Clamp(
-                    child=self.home_page_box,
-                ),
-            ),
-        )
-        self.download_page = Adw.ViewStackPage(
-            title="Download",
-            icon_name="folder-download-symbolic",
-            child=Gtk.ScrolledWindow(
-                child=Adw.Clamp(
-                    child=self.download_app_group,
-                ),
-            ),
-        )
-
-        self.main_box.append(self.header_bar)
-        self.main_box.append(self.stack)
-        self.stack.add(self.home_page)
-        self.stack.add(self.download_page)
-        self.home_page_box.append(self.set_portable_home_button)
-        self.home_page_box.append(self.appimage_group)
-        self.download_header_box.append(self.search_entry)
-        self.download_header_box.append(self.category_combo)
-
-        self.win.present()
-
-    #####################################################################################
     def scan_folder(self, action, param):
         Gtk.FileDialog.select_folder(
             Gtk.FileDialog.new(), None, None, self.scan_folder_callback

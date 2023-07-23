@@ -21,36 +21,12 @@ class MyApp(Adw.Application):
         self.portable_home_path = ""
         self.appimage_list = []
         self.appimage_rows = []
-        self.dowload_app_rows = []
+        self.download_app_rows = []
 
     def on_activate(self, app):
-        builder = Gtk.Builder()
-        builder.add_from_file("src/appstogo.ui")
-
-        self.win = builder.get_object("window")
-        self.win.set_application(self)
-        self.win.present()
-
+        self.setup_ui()
         self.data = self.getData()
         self.category_filter = None
-
-        self.set_portable_home_button = builder.get_object("set_portable_home_button")
-        self.portable_home_button_content = builder.get_object(
-            "portable_home_button_content"
-        )
-        self.toast_overlay = builder.get_object("toast_overlay")
-        self.appimage_group = builder.get_object("appimage_group")
-        self.select_appimage_button = builder.get_object("select_appimage_button")
-        self.header_menu_button = builder.get_object("header_menu_button")
-        adw_header = builder.get_object("adw_header")
-        self.dowload_app_group = builder.get_object("dowload_app_group")
-        self.category_combo = builder.get_object("category_combo")
-
-        self.header_menu_button = Gtk.MenuButton(
-            icon_name="open-menu-symbolic",
-            menu_model=self.header_menu(),
-        )
-        adw_header.pack_end(self.header_menu_button)
 
         self.set_portable_home_button.set_menu_model(self.set_portable_home_menu())
         self.select_appimage_button.set_menu_model(self.split_button_menu())
@@ -65,12 +41,115 @@ class MyApp(Adw.Application):
         self.load_portable_home_path_config()
         self.load_appimage_list_from_config()
 
-        # Show the initial batch of data
-        self.search_entry = builder.get_object("download_search")
-
         self.search_entry.connect("activate", self.on_search_activated)
         self.showData(self.category_filter)
 
+    def setup_ui(self):
+        self.main_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+        )
+        self.toast_overlay = Adw.ToastOverlay(
+            child=self.main_box,
+        )
+        self.win = Adw.Window(
+            content=self.toast_overlay,
+            default_height=600,
+            default_width=800,
+        )
+
+        self.header_bar = Adw.HeaderBar(
+            css_classes=["flat"],
+        )
+        self.header_menu_button = Gtk.MenuButton(
+            icon_name="open-menu-symbolic",
+            menu_model=self.header_menu(),
+        )
+        self.header_bar.pack_end(self.header_menu_button)
+
+        self.home_page_box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+        )
+
+        self.portable_home_button_content = Adw.ButtonContent(
+            label="Not set",
+            icon_name="user-home-symbolic",
+        )
+
+        self.set_portable_home_button = Adw.SplitButton(
+            child=self.portable_home_button_content,
+            menu_model=self.set_portable_home_menu(),
+            margin_bottom=10,
+            margin_end=10,
+            margin_start=10,
+            margin_top=10,
+            css_classes=["accent"],
+        )
+
+        self.select_appimage_button = Adw.SplitButton(
+            icon_name="list-add-symbolic",
+            menu_model=self.split_button_menu(),
+        )
+
+        self.appimage_group = Adw.PreferencesGroup(
+            header_suffix=self.select_appimage_button,
+            title="AppImages",
+            vexpand=True,  # Set vexpand property to True
+        )
+
+        self.download_header_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=10,
+        )
+
+        self.search_entry = Gtk.SearchEntry(
+            margin_start=20,  # Set the margin-start property to 20
+        )
+        self.category_combo = Gtk.ComboBoxText()
+
+        self.download_app_group = Adw.PreferencesGroup(
+            title="Download",
+            header_suffix=self.download_header_box,
+            vexpand=True,  # Set vexpand property to True
+            vexpand_set=True,  # Set vexpand-set property to True
+        )
+
+        self.home_page_window = Gtk.ScrolledWindow(
+            child=Adw.Clamp(
+                child=self.home_page_box,
+                vexpand=True,  # Set vexpand property to True
+            ),
+        )
+
+        self.download_window = Gtk.ScrolledWindow(
+            child=Adw.Clamp(
+                child=self.download_app_group,
+                vexpand=True,  # Set vexpand property to True
+            ),
+        )
+
+        self.stack = Adw.ViewStack.new()
+        self.view_switcher = Adw.ViewSwitcher(
+            stack=self.stack, policy=Adw.ViewSwitcherPolicy.WIDE
+        )
+        self.stack.add_titled_with_icon(
+            self.home_page_window, "home", "Home", "user-home-symbolic"
+        )
+        self.stack.add_titled_with_icon(
+            self.download_window, "download", "Download", "document-save-symbolic"
+        )
+        self.header_bar.set_title_widget(self.view_switcher)
+        self.main_box.append(self.header_bar)
+        self.main_box.append(self.stack)
+
+        self.home_page_box.append(self.set_portable_home_button)
+        self.home_page_box.append(self.appimage_group)
+        self.download_header_box.append(self.search_entry)
+        self.download_header_box.append(self.category_combo)
+
+        self.win.set_application(self)
+        self.win.present()
+
+    #####################################################################################
     def scan_folder(self, action, param):
         Gtk.FileDialog.select_folder(
             Gtk.FileDialog.new(), None, None, self.scan_folder_callback
@@ -541,9 +620,9 @@ class MyApp(Adw.Application):
 
     def showData(self, selected_category):
         # Clear the current UI elements before updating with new data
-        for row in self.dowload_app_rows:
-            self.dowload_app_group.remove(row)
-        self.dowload_app_rows = []
+        for row in self.download_app_rows:
+            self.download_app_group.remove(row)
+        self.download_app_rows = []
 
         # Start loading data and images in a new thread
         thread = threading.Thread(
@@ -575,9 +654,9 @@ class MyApp(Adw.Application):
 
     def searchData(self, search_query):
         # Clear the current UI elements before updating with search results
-        for row in self.dowload_app_rows:
-            self.dowload_app_group.remove(row)
-        self.dowload_app_rows = []
+        for row in self.download_app_rows:
+            self.download_app_group.remove(row)
+        self.download_app_rows = []
 
         # Start loading search data and images in a new thread
         thread = threading.Thread(
@@ -608,7 +687,7 @@ class MyApp(Adw.Application):
 
         # Update the title of the download row to reflect the number of search results
         GLib.idle_add(
-            self.dowload_app_group.set_title, f"Search Results - {len(search_results)}"
+            self.download_app_group.set_title, f"Search Results - {len(search_results)}"
         )
 
     def load_data_and_images(self, selected_category):
@@ -631,7 +710,7 @@ class MyApp(Adw.Application):
 
         # Update the title of the download row to reflect the number of appimages
         GLib.idle_add(
-            self.dowload_app_group.set_title, f"Appimages - {appimages_count}"
+            self.download_app_group.set_title, f"Appimages - {appimages_count}"
         )
 
     def on_category_changed(self, combo):
@@ -749,8 +828,8 @@ class MyApp(Adw.Application):
                 appimage_row.add_row(info_box)
 
                 appimage_row.add_prefix(icon)
-                self.dowload_app_group.add(appimage_row)
-                self.dowload_app_rows.append(appimage_row)
+                self.download_app_group.add(appimage_row)
+                self.download_app_rows.append(appimage_row)
 
                 appimages_count += 1
 
