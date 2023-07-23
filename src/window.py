@@ -537,29 +537,40 @@ class MyApp(Adw.Application):
         return data
 
     def showData(self, selected_category):
-            items = self.data["items"]
+        # Clear the current UI elements before updating with new data
+        for row in self.dowload_app_rows:
+            self.dowload_app_group.remove(row)
+        self.dowload_app_rows = []
 
-            # Count the number of appimages based on selected category
-            appimages_count = 0
-            filtered_items = []
-            for item in items:
-                if selected_category in item["categories"]:
-                    filtered_items.append(item)
-                    appimages_count += 1
+        # Start loading data and images in a new thread
+        thread = threading.Thread(
+            target=self.load_data_and_images, args=(selected_category,), daemon=True
+        )
+        thread.start()
 
-            appimage_io_url = "https://appimage.github.io/database"
+    def load_data_and_images(self, selected_category):
+        items = self.data["items"]
 
-            for row in self.dowload_app_rows:
-                self.dowload_app_group.remove(row)
-            self.dowload_app_rows = []
+        # Count the number of appimages based on selected category
+        appimages_count = 0
+        filtered_items = []
+        for item in items:
+            if selected_category in item["categories"]:
+                filtered_items.append(item)
+                appimages_count += 1
 
-            # Loop through the filtered items to create and add rows
-            self.setup_download_row(
-                selected_category, filtered_items, appimages_count, appimage_io_url
-            )
+        appimage_io_url = "https://appimage.github.io/database"
 
-            # Update the title of the download row to reflect the number of appimages
-            self.dowload_app_group.set_title(f"Appimages - {appimages_count}")
+        # Loop through the filtered items to create and add rows
+        self.setup_download_row(
+            selected_category, filtered_items, appimages_count, appimage_io_url
+        )
+
+        # Update the title of the download row to reflect the number of appimages
+        GLib.idle_add(
+            self.dowload_app_group.set_title, f"Appimages - {appimages_count}"
+        )
+
 
     def on_category_changed(self, combo):
         # Get the selected category from the combo box
