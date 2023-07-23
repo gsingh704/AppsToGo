@@ -81,8 +81,6 @@ class MyApp(Adw.Application):
             child=self.portable_home_button_content,
             menu_model=self.set_portable_home_menu(),
             margin_bottom=10,
-            margin_end=10,
-            margin_start=10,
             margin_top=10,
             css_classes=["accent"],
         )
@@ -111,6 +109,7 @@ class MyApp(Adw.Application):
         self.download_app_group = Adw.PreferencesGroup(
             title="Download",
             header_suffix=self.download_header_box,
+            margin_top=10,
             vexpand=True,  # Set vexpand property to True
             vexpand_set=True,  # Set vexpand-set property to True
         )
