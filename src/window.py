@@ -45,6 +45,8 @@ class MyApp(Adw.Application):
         adw_header = builder.get_object("adw_header")
         self.dowload_app_group = builder.get_object("dowload_app_group")
         self.category_combo = builder.get_object("category_combo")
+        self.download_search = builder.get_object("download_search")
+
 
         self.header_menu_button = Gtk.MenuButton(
             icon_name="open-menu-symbolic",
@@ -67,6 +69,8 @@ class MyApp(Adw.Application):
 
         # Show the initial batch of data
         self.showData(self.category_filter)
+
+
 
     def scan_folder(self, action, param):
         Gtk.FileDialog.select_folder(
@@ -571,7 +575,6 @@ class MyApp(Adw.Application):
             self.dowload_app_group.set_title, f"Appimages - {appimages_count}"
         )
 
-
     def on_category_changed(self, combo):
         # Get the selected category from the combo box
         active_item = combo.get_active_iter()
@@ -627,6 +630,7 @@ class MyApp(Adw.Application):
 
                 appimage_row = Adw.ExpanderRow(
                     title=name,
+                    subtitle=categories
                 )
                 download_button = Gtk.Button(
                     icon_name="document-save-symbolic",

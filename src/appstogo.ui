@@ -94,7 +94,15 @@
                                 <child>
                                   <object class="AdwPreferencesGroup" id="dowload_app_group">
                                     <property name="header-suffix">
-                                      <object class="GtkComboBoxText" id="category_combo"/>
+                                      <object class="GtkBox">
+                                        <property name="spacing">10</property>
+                                        <child>
+                                          <object class="GtkSearchEntry" id="download_search"/>
+                                        </child>
+                                        <child>
+                                          <object class="GtkComboBoxText" id="category_combo"/>
+                                        </child>
+                                      </object>
                                     </property>
                                     <property name="margin-bottom">10</property>
                                     <property name="margin-end">10</property>

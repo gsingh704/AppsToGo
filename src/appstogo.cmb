@@ -28,7 +28,9 @@
 	(2,36,"AdwClamp",None,35,None,None,None,None,None),
 	(2,37,"GtkBox","download_box",36,None,None,None,None,None),
 	(2,38,"AdwPreferencesGroup","dowload_app_group",37,None,None,None,1,None),
-	(2,39,"GtkComboBoxText","category_combo",38,None,None,None,None,None)
+	(2,39,"GtkBox",None,38,None,None,None,None,None),
+	(2,40,"GtkComboBoxText","category_combo",39,None,None,None,1,None),
+	(2,45,"GtkSearchEntry","download_search",39,None,None,None,None,None)
   </object>
   <object_property>
 	(2,1,"AdwWindow","content",None,None,None,None,None,21,None,None,None,None),
@@ -79,7 +81,8 @@
 	(2,38,"GtkWidget","margin-start","10",None,None,None,None,None,None,None,None,None),
 	(2,38,"GtkWidget","margin-top","10",None,None,None,None,None,None,None,None,None),
 	(2,38,"GtkWidget","vexpand","True",None,None,None,None,None,None,None,None,None),
-	(2,38,"GtkWidget","vexpand-set","True",None,None,None,None,None,None,None,None,None)
+	(2,38,"GtkWidget","vexpand-set","True",None,None,None,None,None,None,None,None,None),
+	(2,39,"GtkBox","spacing","10",None,None,None,None,None,None,None,None,None)
   </object_property>
   <object_data>
 	(2,23,"GtkWidget",1,1,None,None,None),
