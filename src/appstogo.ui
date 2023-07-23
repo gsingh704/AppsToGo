@@ -85,7 +85,7 @@
                         <property name="child">
                           <object class="AdwClamp">
                             <property name="child">
-                              <object class="GtkBox">
+                              <object class="GtkBox" id="download_box">
                                 <property name="margin-bottom">10</property>
                                 <property name="margin-end">10</property>
                                 <property name="margin-start">10</property>

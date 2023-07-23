@@ -26,7 +26,7 @@
 	(2,34,"AdwViewStackPage","download_page",25,None,None,None,1,None),
 	(2,35,"GtkScrolledWindow",None,34,None,None,None,None,None),
 	(2,36,"AdwClamp",None,35,None,None,None,None,None),
-	(2,37,"GtkBox",None,36,None,None,None,None,None),
+	(2,37,"GtkBox","download_box",36,None,None,None,None,None),
 	(2,38,"AdwPreferencesGroup","dowload_app_group",37,None,None,None,1,None),
 	(2,39,"GtkComboBoxText","category_combo",38,None,None,None,None,None)
   </object>
