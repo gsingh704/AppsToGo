@@ -2,7 +2,6 @@ import os
 import json
 import shutil
 import subprocess
-import sys
 import threading
 import gi
 import requests
@@ -10,6 +9,7 @@ import warnings
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Gtk, Adw, GLib, Gio, GdkPixbuf
+
 
 
 class MyApp(Adw.Application):
@@ -851,7 +851,3 @@ class MyApp(Adw.Application):
     def on_download_clicked(self, button, download_url):
         Gio.AppInfo.launch_default_for_uri(download_url, None)
 
-
-if __name__ == "__main__":
-    app = MyApp(application_id="org.gurji.AppsToGo")
-    app.run(sys.argv)
