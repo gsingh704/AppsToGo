@@ -1,7 +1,7 @@
 version: 1
 script:
   - rm -rf AppDir | true
-  - cp -r src/window.py AppDir/
+  - cp -r src/window.py APPDIR/window.py
   - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
   - cp assets/AppsToGo.svg AppDir/usr/share/icons/hicolor/256x256/apps/AppsToGo.svg
   - apt update && apt install squashfs-tools zsync -y
