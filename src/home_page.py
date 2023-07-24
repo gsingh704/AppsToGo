@@ -1,0 +1,407 @@
+import os
+import json
+import shutil
+import subprocess
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Gtk, Adw, GLib, Gio
+
+
+class Home_page(Adw.Application):
+    def __init__(self, ui) -> None:
+        super().__init__()
+        self.ui = ui
+        self.portable_home_path = ""
+        self.appimage_list = []
+        self.appimage_rows = []
+
+        self.ui.select_appimage_button.connect("clicked", self.select_appimage)
+        self.ui.set_portable_home_button.connect("clicked", self.set_portable_home)
+        self.load_portable_home_path_config()
+        self.load_appimage_list_from_config()
+
+    def scan_folder(self, action, param):
+        Gtk.FileDialog.select_folder(
+            Gtk.FileDialog.new(), None, None, self.scan_folder_callback
+        )
+
+    def scan_folder_callback(self, dialog, result):
+        try:
+            folder = dialog.select_folder_finish(result)
+            if folder is not None:
+                selected_path = folder.get_path()
+                for file in os.listdir(selected_path):
+                    if file.endswith(".AppImage") or file.endswith(".appimage"):
+                        self.create_copy_appimage_row(os.path.join(selected_path, file))
+        except GLib.Error as error:
+            print(f"Error selecting folder: {error.message}")
+            Gtk.AppChooserDialog.new()
+
+    def create_copy_appimage_row(self, file):
+        appimage_name = os.path.basename(file)
+
+        appimage_name = self.copy_appimage(file)
+        if appimage_name is not None:
+            self.create_appimage_row(appimage_name, self.portable_home_path)
+            self.save_appimage_list_to_config(appimage_name)
+
+    def copy_appimage(self, appimage_origin):
+        appimage_name = os.path.splitext(os.path.basename(appimage_origin))[0]
+        appimage_destination = os.path.join(
+            self.portable_home_path, appimage_name, appimage_name + ".AppImage"
+        )
+        if os.path.exists(appimage_destination):
+            self.ui.show_toast(appimage_name + " already exists", 3000)
+            return None
+
+        os.makedirs(os.path.dirname(appimage_destination), exist_ok=True)
+        shutil.copy2(appimage_origin, appimage_destination)
+
+        appimage_data_folder = os.path.join(
+            os.path.dirname(appimage_destination), appimage_name + ".AppImage.home"
+        )
+        os.makedirs(appimage_data_folder, exist_ok=True)
+        os.chmod(appimage_destination, 0o755)
+        self.save_appimage_list_to_config(appimage_name)
+        return appimage_name
+
+    def create_appimage_row(self, appimage_name, portable_home_path):
+        appimage_group = self.ui.appimage_group
+
+        appimage_row = Adw.ActionRow(
+            title=appimage_name,
+        )
+        appimage_group.add(appimage_row)
+
+        appimage_path = os.path.join(
+            portable_home_path, appimage_name, appimage_name + ".AppImage"
+        )
+
+        # run
+        run_button = Gtk.Button(
+            icon_name="media-playback-start",
+            tooltip_text="Run " + appimage_name,
+            valign=Gtk.Align.CENTER,
+            css_classes=["suggested-action", "circular"],
+        )
+        run_button.connect("clicked", self.run_appimage, appimage_path)
+
+        # open folder
+        open_appimage_folder_button = Gtk.Button(
+            icon_name="folder-symbolic",
+            tooltip_text="Open " + appimage_name + " folder",
+            valign=Gtk.Align.CENTER,
+            css_classes=["raised"],
+        )
+        open_appimage_folder_button.connect(
+            "clicked", self.open_appimage_folder, appimage_path
+        )
+
+        # remove
+        remove_button = Gtk.Button(
+            icon_name="user-trash-symbolic",
+            tooltip_text="Remove " + appimage_name,
+            valign=Gtk.Align.CENTER,
+            css_classes=["destructive-action"],
+        )
+        remove_button.connect(
+            "clicked",
+            self.confirm_remove,
+            appimage_name,
+            portable_home_path,
+            appimage_group,
+            appimage_row,
+        )
+        # edit
+        edit_button = Gtk.Button(
+            icon_name="document-edit-symbolic",
+            tooltip_text="Edit " + appimage_name,
+            valign=Gtk.Align.CENTER,
+            css_classes=["raised"],
+        )
+        edit_button.connect(
+            "clicked",
+            self.edit_appimage,
+            appimage_name,
+            portable_home_path,
+            appimage_group,
+            appimage_row,
+        )
+
+        appimage_row.add_suffix(remove_button)
+        appimage_row.add_suffix(open_appimage_folder_button)
+        appimage_row.add_suffix(edit_button)
+        appimage_row.add_suffix(run_button)
+
+        self.appimage_rows.append(appimage_row)
+
+        appimage_row.new()
+
+    def edit_appimage(
+        self, button, appimage_name, portable_home_path, appimage_group, appimage_row
+    ):
+        box = Gtk.Box(
+            orientation=Gtk.Orientation.VERTICAL,
+            margin_bottom=10,
+            margin_end=10,
+            margin_start=10,
+            margin_top=10,
+            spacing=10,
+        )
+        dialog = Adw.MessageDialog(
+            transient_for=self.win,
+            child=box,
+        )
+        heading = Gtk.Label(
+            label="Edit " + appimage_name,
+            margin_bottom=10,
+            margin_end=10,
+            margin_start=10,
+            margin_top=10,
+        )
+        entry = Adw.EntryRow(
+            text=appimage_name,
+            margin_bottom=10,
+            margin_end=10,
+            margin_start=10,
+            margin_top=10,
+        )
+        box2 = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=10,
+            halign=Gtk.Align.END,
+            margin_end=10,
+        )
+        save_button = Gtk.Button(
+            label="Save",
+            halign=Gtk.Align.END,
+            css_classes=["suggested-action"],
+            width_request=100,
+        )
+        save_button.connect(
+            "clicked",
+            self.save_edit,
+            entry,
+            appimage_name,
+            portable_home_path,
+            appimage_group,
+            appimage_row,
+            dialog,
+        )
+        cancel_button = Gtk.Button(
+            label="Cancel",
+            halign=Gtk.Align.END,
+            width_request=100,
+        )
+        cancel_button.connect("clicked", self.cancel_edit, dialog)
+        box.append(heading)
+        box.append(entry)
+        box.append(box2)
+        box2.append(cancel_button)
+        box2.append(save_button)
+        dialog.present()
+
+    def save_edit(
+        self,
+        button,
+        entry,
+        appimage_name,
+        portable_home_path,
+        appimage_group,
+        appimage_row,
+        dialog,
+    ):
+        new_appimage_name = entry.get_text()
+        if new_appimage_name == "":
+            self.ui.show_toast("Name cannot be empty", 3000)
+            return
+        if new_appimage_name == appimage_name:
+            dialog.close()
+            return
+        new_appimage_folder = os.path.join(portable_home_path, new_appimage_name)
+        if os.path.exists(new_appimage_folder):
+            self.ui.show_toast(new_appimage_name + " already exists", 3000)
+            return
+        old_appimage_folder = os.path.join(portable_home_path, appimage_name)
+        os.rename(old_appimage_folder, new_appimage_folder)
+        os.rename(
+            os.path.join(new_appimage_folder, appimage_name + ".AppImage"),
+            os.path.join(new_appimage_folder, new_appimage_name + ".AppImage"),
+        )
+        os.rename(
+            os.path.join(new_appimage_folder, appimage_name + ".AppImage.home"),
+            os.path.join(new_appimage_folder, new_appimage_name + ".AppImage.home"),
+        )
+        config_file = os.path.join(portable_home_path, ".config")
+        if os.path.exists(config_file):
+            with open(config_file, "r") as f:
+                appimage_list = json.load(f)
+            if appimage_name in appimage_list:
+                index = appimage_list.index(appimage_name)
+                appimage_list[index] = new_appimage_name
+
+            with open(config_file, "w") as f:
+                json.dump(appimage_list, f)
+
+        appimage_row.set_title(new_appimage_name)
+        dialog.close()
+
+    def cancel_edit(self, button, dialog):
+        dialog.close()
+
+    def confirm_remove(
+        self, button, appimage_name, portable_home_path, appimage_group, appimage_row
+    ):
+        dialog = Adw.MessageDialog(
+            heading="Are you sure you want to remove " + appimage_name + "?",
+            transient_for=self.win,
+            body="This will remove the AppImage and all of its data.",
+            close_response="Cancel",
+            default_response="Cancel",
+        )
+        dialog.add_response("Cancel", "Cancel")
+        dialog.add_response("Remove", "Remove")
+
+        dialog.set_response_appearance("Remove", Adw.ResponseAppearance.DESTRUCTIVE)
+
+        dialog.connect(
+            "response",
+            self.handle_remove_response,
+            appimage_name,
+            portable_home_path,
+            appimage_row,
+        )
+        dialog.present()
+
+    def handle_remove_response(
+        self,
+        dialog,
+        response_id,
+        appimage_name,
+        portable_home_path,
+        appimage_row,
+    ):
+        if response_id == "Remove":
+            shutil.rmtree(os.path.join(portable_home_path, appimage_name))
+            config_file = os.path.join(portable_home_path, ".config")
+
+            if os.path.exists(config_file):
+                with open(config_file, "r") as f:
+                    appimage_list = json.load(f)
+
+                if appimage_name in appimage_list:
+                    appimage_list.remove(appimage_name)
+
+                with open(config_file, "w") as f:
+                    json.dump(appimage_list, f)
+                self.ui.appimage_group.remove(appimage_row)
+
+                if appimage_row in self.appimage_rows:
+                    self.appimage_rows.remove(appimage_row)
+
+                self.ui.show_toast(appimage_name + " removed", 3000)
+
+    def open_appimage_folder(self, button, appimage_path):
+        appimage_data_folder = os.path.join(os.path.dirname(appimage_path))
+        subprocess.Popen(["xdg-open", appimage_data_folder])
+
+    def run_appimage(self, button, appimage_path):
+        subprocess.Popen([appimage_path])
+
+    def set_portable_home(self, button):
+        Gtk.FileDialog.select_folder(
+            Gtk.FileDialog.new(), None, None, self.set_portable_home_callback
+        )
+
+    def set_portable_home_callback(self, dialog, result):
+        try:
+            folder = dialog.select_folder_finish(result)
+            if folder is not None:
+                selected_path = folder.get_path()
+                self.portable_home_path = os.path.join(selected_path, "AppsToGo")
+                os.makedirs(self.portable_home_path, exist_ok=True)
+
+                self.ui.portable_home_button_content.set_label(self.portable_home_path)
+
+                config_path = os.path.join(os.path.expanduser("~/.config/AppsToGo"))
+                os.makedirs(config_path, exist_ok=True)
+                config_file = os.path.join(config_path, "config.json")
+                with open(config_file, "w") as f:
+                    f.write(self.portable_home_path)
+                self.reload_appimage_list()
+
+        except GLib.Error as error:
+            print(f"Error selecting folder: {error.message}")
+            Gtk.AppChooserDialog.new()
+
+    def reload_appimage_list(self):
+        for row in self.appimage_rows:
+            self.ui.appimage_group.remove(row)
+        self.appimage_rows = []
+        self.load_appimage_list_from_config()
+
+    def select_appimage(self, button):
+        select_appimage_dialog = Gtk.FileDialog.new()
+        filter_appimage = Gtk.FileFilter()
+        filter_appimage.set_name("AppImage files")
+        filter_appimage.add_pattern("*.AppImage")
+        filter_appimage.add_pattern("*.appimage")
+        filters = Gio.ListStore.new(Gtk.FileFilter)
+        filters.append(filter_appimage)
+        select_appimage_dialog.set_filters(filters)
+        select_appimage_dialog.set_default_filter(filter_appimage)
+        select_appimage_dialog.open(self.win, None, self.select_appimage_callback)
+
+    def select_appimage_callback(self, dialog, result):
+        try:
+            file = dialog.open_finish(result)
+            if file is not None:
+                file_origin = file.get_path()
+                self.create_copy_appimage_row(file_origin)
+
+        except GLib.Error as error:
+            print(f"Error selecting file: {error.message}")
+            Gtk.AppChooserDialog.new()
+
+    def load_portable_home_path_config(self):
+        try:
+            config_file = os.path.join(
+                os.path.expanduser("~/.config/AppsToGo/config.json")
+            )
+            with open(config_file, "r") as f:
+                self.portable_home_path = f.read()
+        except FileNotFoundError:
+            self.portable_home_path = "Not set"
+        self.ui.portable_home_button_content.set_label(self.portable_home_path)
+
+    def save_appimage_list_to_config(self, appimage_name):
+        config_file = os.path.join(self.portable_home_path, ".config")
+        if not os.path.exists(config_file):
+            with open(config_file, "w") as f:
+                f.write("[]")
+                self.appimage_list = []
+        else:
+            with open(config_file, "r") as f:
+                self.appimage_list = json.load(f)
+
+        if appimage_name not in self.appimage_list:
+            self.appimage_list.append(appimage_name)
+
+        with open(config_file, "w") as f:
+            json.dump(self.appimage_list, f)
+
+    def load_appimage_list_from_config(self):
+        portable_home_path = self.portable_home_path
+        config_file = os.path.join(portable_home_path, ".config")
+        if not os.path.exists(config_file):
+            self.appimage_list = []
+            return []
+        with open(config_file, "r") as f:
+            self.appimage_list = json.load(f)
+        for appimage in self.appimage_list:
+            self.create_appimage_row(appimage, portable_home_path)
+
+    def open_portable_home(self, action, param):
+        subprocess.Popen(["xdg-open", self.portable_home_path])

@@ -9,6 +9,7 @@ Use the Appimage in Releases, or from Github actions.
 ## Screenshots
 
 ![Screenshot](assets/screenshot/home_dark.png)
+![Screenshot](assets/screenshot/download_dark.png)
 
 ## How it Works
 
@@ -18,15 +19,15 @@ Use the Appimage in Releases, or from Github actions.
    - The folder structure will be as follows:
 
         ``` folder structure
-        PortableApps/
+        AppsToGo/south park
         ├── Firefox/
         │   ├── Firefox.AppImage
         │   └── Firefox.Appimage.home/
         ├── Chrome/
         │   ├── Chrome.AppImage
         │   └── Chrome.AppImage.home/
-        ├── PortableApps.AppImage
-        └── Config.json
+        ├── AppsToGo.AppImage
+        └── Config
         ```
 
 2. The application also saves the configuration in the .config folder, so that user don't have to select the folder every time the application is launched.
