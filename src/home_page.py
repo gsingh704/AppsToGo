@@ -10,7 +10,17 @@ from gi.repository import Gtk, Adw, GLib, Gio
 
 
 class Home_page(Adw.Application):
+    """
+    A class representing the home page of the AppsToGo application.
+
+    """
+
     def __init__(self, ui) -> None:
+        """
+        Initializes the Home_page object.
+
+        :param ui: the Ui file
+        """
         super().__init__()
         self.ui = ui
         self.portable_home_path = ""
@@ -23,11 +33,23 @@ class Home_page(Adw.Application):
         self.load_appimage_list_from_config()
 
     def scan_folder(self, action, param):
+        """
+        Opens a file dialog to select a folder to scan for appimages.
+
+        :param action: the action that triggered the scan_folder method
+        :param param: the parameter of the action that triggered the scan_folder method
+        """
         Gtk.FileDialog.select_folder(
             Gtk.FileDialog.new(), None, None, self.scan_folder_callback
         )
 
     def scan_folder_callback(self, dialog, result):
+        """
+        Callback function for the scan_folder method.
+
+        :param dialog: the dialog that triggered the scan_folder_callback method
+        :param result: the result of the dialog that triggered the scan_folder_callback method
+        """
         try:
             folder = dialog.select_folder_finish(result)
             if folder is not None:
@@ -40,6 +62,11 @@ class Home_page(Adw.Application):
             Gtk.AppChooserDialog.new()
 
     def create_copy_appimage_row(self, file):
+        """
+        Creates a new appimage row in the UI.
+
+        :param file: the path to the appimage file
+        """
         appimage_name = os.path.basename(file)
 
         appimage_name = self.copy_appimage(file)
@@ -48,6 +75,11 @@ class Home_page(Adw.Application):
             self.save_appimage_list_to_config(appimage_name)
 
     def copy_appimage(self, appimage_origin):
+        """
+        Copies the appimage file to the portable home directory and creates a data folder for the appimage.
+
+        :param appimage_origin: the path to the appimage file
+        """
         appimage_name = os.path.splitext(os.path.basename(appimage_origin))[0]
         appimage_destination = os.path.join(
             self.portable_home_path, appimage_name, appimage_name + ".AppImage"
@@ -68,6 +100,12 @@ class Home_page(Adw.Application):
         return appimage_name
 
     def create_appimage_row(self, appimage_name, portable_home_path):
+        """
+        Creates a new appimage row in the UI.
+
+        :param appimage_name: the name of the appimage file
+        :param portable_home_path: the path to the portable home directory
+        """
         appimage_group = self.ui.appimage_group
 
         appimage_row = Adw.ActionRow(
@@ -111,7 +149,6 @@ class Home_page(Adw.Application):
             self.confirm_remove,
             appimage_name,
             portable_home_path,
-            appimage_group,
             appimage_row,
         )
         # edit
@@ -142,6 +179,16 @@ class Home_page(Adw.Application):
     def edit_appimage(
         self, button, appimage_name, portable_home_path, appimage_group, appimage_row
     ):
+        """
+        Opens a dialog to edit the name of the appimage.
+
+        :param button: the button that triggered the edit_appimage method
+        :param appimage_name: the name of the appimage file
+        :param portable_home_path: the path to the portable home directory
+        :param appimage_group: the appimage group
+        :param appimage_row: the appimage row
+        """
+
         box = Gtk.Box(
             orientation=Gtk.Orientation.VERTICAL,
             margin_bottom=10,
@@ -151,7 +198,7 @@ class Home_page(Adw.Application):
             spacing=10,
         )
         dialog = Adw.MessageDialog(
-            transient_for=self.win,
+            transient_for=self.ui.win,
             child=box,
         )
         heading = Gtk.Label(
@@ -186,7 +233,6 @@ class Home_page(Adw.Application):
             entry,
             appimage_name,
             portable_home_path,
-            appimage_group,
             appimage_row,
             dialog,
         )
@@ -209,10 +255,19 @@ class Home_page(Adw.Application):
         entry,
         appimage_name,
         portable_home_path,
-        appimage_group,
         appimage_row,
         dialog,
     ):
+        """
+        Saves the new name of the appimage.
+
+        :param button: the button that triggered the save_edit method
+        :param entry: the entry field of the dialog
+        :param appimage_name: the name of the appimage file
+        :param portable_home_path: the path to the portable home directory
+        :param appimage_row: the appimage row
+        :param dialog: the dialog
+        """
         new_appimage_name = entry.get_text()
         if new_appimage_name == "":
             self.ui.show_toast("Name cannot be empty", 3000)
@@ -249,14 +304,23 @@ class Home_page(Adw.Application):
         dialog.close()
 
     def cancel_edit(self, button, dialog):
+        """
+        Closes the dialog.
+        """
         dialog.close()
 
-    def confirm_remove(
-        self, button, appimage_name, portable_home_path, appimage_group, appimage_row
-    ):
+    def confirm_remove(self, button, appimage_name, portable_home_path, appimage_row):
+        """
+        Opens a dialog to confirm the removal of the appimage.
+
+        :param button: the button that triggered the confirm_remove method
+        :param appimage_name: the name of the appimage file
+        :param portable_home_path: the path to the portable home directory
+        :param appimage_row: the appimage row
+        """
         dialog = Adw.MessageDialog(
             heading="Are you sure you want to remove " + appimage_name + "?",
-            transient_for=self.win,
+            transient_for=self.ui.win,
             body="This will remove the AppImage and all of its data.",
             close_response="Cancel",
             default_response="Cancel",
@@ -283,6 +347,15 @@ class Home_page(Adw.Application):
         portable_home_path,
         appimage_row,
     ):
+        """
+        Handles the user's response to the remove dialog.
+
+        :param dialog: the dialog that triggered the handle_remove_response method
+        :param response_id: the response id of the dialog that triggered the handle_remove_response method
+        :param appimage_name: the name of the appimage file
+        :param portable_home_path: the path to the portable home directory
+        :param appimage_row: the appimage row
+        """
         if response_id == "Remove":
             shutil.rmtree(os.path.join(portable_home_path, appimage_name))
             config_file = os.path.join(portable_home_path, ".config")
@@ -304,18 +377,39 @@ class Home_page(Adw.Application):
                 self.ui.show_toast(appimage_name + " removed", 3000)
 
     def open_appimage_folder(self, button, appimage_path):
+        """
+        Opens the folder containing the AppImage.
+
+        :param button: the button that triggered the open_appimage_folder method
+        :param appimage_path: the path to the appimage file
+        """
         appimage_data_folder = os.path.join(os.path.dirname(appimage_path))
         subprocess.Popen(["xdg-open", appimage_data_folder])
 
     def run_appimage(self, button, appimage_path):
+        """
+        Runs the AppImage.
+
+        :param button: the button that triggered the run_appimage method
+        :param appimage_path: the path to the appimage file
+        """
         subprocess.Popen([appimage_path])
 
     def set_portable_home(self, button):
+        """
+        Opens a file dialog to select the portable home directory.
+        """
         Gtk.FileDialog.select_folder(
             Gtk.FileDialog.new(), None, None, self.set_portable_home_callback
         )
 
     def set_portable_home_callback(self, dialog, result):
+        """
+        Callback function for the portable home directory file dialog.
+
+        :param dialog (Gtk.FileChooserDialog): The file dialog.
+        :param result (int): The result of the file dialog.
+        """
         try:
             folder = dialog.select_folder_finish(result)
             if folder is not None:
@@ -337,12 +431,18 @@ class Home_page(Adw.Application):
             Gtk.AppChooserDialog.new()
 
     def reload_appimage_list(self):
+        """
+        Reloads the list of AppImages.
+        """
         for row in self.appimage_rows:
             self.ui.appimage_group.remove(row)
         self.appimage_rows = []
         self.load_appimage_list_from_config()
 
     def select_appimage(self, button):
+        """
+        Opens a file dialog to select an AppImage.
+        """
         select_appimage_dialog = Gtk.FileDialog.new()
         filter_appimage = Gtk.FileFilter()
         filter_appimage.set_name("AppImage files")
@@ -352,9 +452,15 @@ class Home_page(Adw.Application):
         filters.append(filter_appimage)
         select_appimage_dialog.set_filters(filters)
         select_appimage_dialog.set_default_filter(filter_appimage)
-        select_appimage_dialog.open(self.win, None, self.select_appimage_callback)
+        select_appimage_dialog.open(self.ui.win, None, self.select_appimage_callback)
 
     def select_appimage_callback(self, dialog, result):
+        """
+        Callback function for the AppImage file dialog.
+
+        :param dialog (Gtk.FileChooserDialog): The file dialog.
+        :param result (int): The result of the file dialog.
+        """
         try:
             file = dialog.open_finish(result)
             if file is not None:
@@ -366,6 +472,9 @@ class Home_page(Adw.Application):
             Gtk.AppChooserDialog.new()
 
     def load_portable_home_path_config(self):
+        """
+        Loads the portable home directory path from the config file.
+        """
         try:
             config_file = os.path.join(
                 os.path.expanduser("~/.config/AppsToGo/config.json")
@@ -377,6 +486,11 @@ class Home_page(Adw.Application):
         self.ui.portable_home_button_content.set_label(self.portable_home_path)
 
     def save_appimage_list_to_config(self, appimage_name):
+        """
+        Saves the list of AppImages to the config file.
+
+        :param appimage_name: the name of the appimage file
+        """
         config_file = os.path.join(self.portable_home_path, ".config")
         if not os.path.exists(config_file):
             with open(config_file, "w") as f:
@@ -393,6 +507,9 @@ class Home_page(Adw.Application):
             json.dump(self.appimage_list, f)
 
     def load_appimage_list_from_config(self):
+        """
+        Loads the list of AppImages from the config file.
+        """
         portable_home_path = self.portable_home_path
         config_file = os.path.join(portable_home_path, ".config")
         if not os.path.exists(config_file):
@@ -404,4 +521,7 @@ class Home_page(Adw.Application):
             self.create_appimage_row(appimage, portable_home_path)
 
     def open_portable_home(self, action, param):
+        """
+        Opens the portable home directory.
+        """
         subprocess.Popen(["xdg-open", self.portable_home_path])

@@ -13,6 +13,9 @@ from ui import Ui
 
 
 class MyApp(Adw.Application):
+    """
+    The main application class for AppsToGo.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.connect("activate", self.on_activate)
@@ -29,6 +32,9 @@ class MyApp(Adw.Application):
         self.category_combo = None
 
     def on_activate(self, app):
+        """
+        Called when the application is activated.
+        """
         self.ui.header_menu_button.set_menu_model(self.header_menu())
         self.ui.set_portable_home_button.set_menu_model(self.set_portable_home_menu())
         self.ui.select_appimage_button.set_menu_model(self.split_button_menu())
@@ -37,6 +43,9 @@ class MyApp(Adw.Application):
         self.ui.win.present()
 
     def header_menu(self):
+        """
+        Creates the header menu.
+        """
         menu = Gio.Menu()
         menu.append("About AppsToGo", "app.about")
 
@@ -47,6 +56,9 @@ class MyApp(Adw.Application):
         return menu
 
     def set_portable_home_menu(self):
+        """
+        Creates the set portable home menu button.
+        """
         menu = Gio.Menu()
         menu.append("Open portable home", "app.open_portable_home")
 
@@ -57,6 +69,9 @@ class MyApp(Adw.Application):
         return menu
 
     def split_button_menu(self):
+        """
+        Creates the split button menu (add appimage button).
+        """
         scan_folder_action = Gio.SimpleAction.new("scan_folder", None)
         scan_folder_action.connect("activate", self.hp.scan_folder)
         self.add_action(scan_folder_action)
