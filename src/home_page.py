@@ -459,7 +459,8 @@ class Home_page(Adw.Application):
         """
         if response_id == "Yes":
             try:
-                url = "https://github.com/gsingh704/AppsToGo/releases/latest/AppsToGo.AppImage"
+                # TODO: Always download latest release
+                url = "https://github.com/gsingh704/AppsToGo/releases/download/v.0.0.3/AppsToGo.AppImage"
                 subprocess.run(["wget", url, "-P", self.portable_home_path])
                 subprocess.run(
                     [
