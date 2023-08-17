@@ -1,7 +1,7 @@
 version: 1
 script:
   - rm -rf AppDir | true
-  - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+  - mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
   - cp -R src/* AppDir/
   - cp assets/org.gurji.AppsToGo.svg  AppDir/usr/share/icons/hicolor/scalable/apps/org.gurji.AppsToGo.svg
   - apt update && apt install squashfs-tools zsync -y
