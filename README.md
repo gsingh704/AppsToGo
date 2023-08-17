@@ -58,7 +58,7 @@ The AppToGo application offers the following functions:
 - [ ] Add AppsToGo to the PortableHome folder
 - [ ] Integrate more with the system
 - [x] Research way to download Appimages from the internet directly
-- [ ] Open folder for edited Appimages
+- [x] Open folder for edited Appimages
 
 ## Known Issues
 

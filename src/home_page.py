@@ -425,10 +425,56 @@ class Home_page(Adw.Application):
                 with open(config_file, "w") as f:
                     f.write(self.portable_home_path)
                 self.reload_appimage_list()
+                self.download_latest()
 
         except GLib.Error as error:
             print(f"Error selecting folder: {error.message}")
             Gtk.AppChooserDialog.new()
+
+    def download_latest(self):
+        dialog = Adw.MessageDialog(
+            heading="Download AppsToGo?",
+            transient_for=self.ui.win,
+            body="Do you want to download the latest version of AppsToGo?",
+            close_response="No",
+            default_response="No",
+        )
+        dialog.add_response("No", "No")
+        dialog.add_response("Yes", "Yes")
+
+        dialog.set_response_appearance("Yes", Adw.ResponseAppearance.DESTRUCTIVE)
+
+        dialog.connect(
+            "response",
+            self.handle_download_response,
+        )
+        dialog.present()
+
+    def handle_download_response(self, dialog, response_id):
+        """
+        Handles the user's response to the download dialog.
+
+        :param dialog: the dialog that triggered the handle_download_response method
+        :param response_id: the response id of the dialog that triggered the handle_download_response method
+        """
+        if response_id == "Yes":
+            try:
+                url = "https://github.com/gsingh704/AppsToGo/releases/download/v0.0.2/AppsToGo-0.0.2-x86_64.AppImage"
+                subprocess.run(["wget", url, "-P", self.portable_home_path])
+                subprocess.run(
+                    [
+                        "chmod",
+                        "a+x",
+                        os.path.join(
+                            self.portable_home_path, "AppsToGo-0.0.2-x86_64.AppImage"
+                        ),
+                    ]
+                )
+                self.ui.show_toast("Downloaded AppsToGo", 3000)
+            except Exception as e:
+                print(e)
+                self.ui.show_toast("Error downloading AppsToGo", 3000)
+        dialog.close()
 
     def reload_appimage_list(self):
         """
@@ -530,7 +576,7 @@ class Home_page(Adw.Application):
         """
         Exports all the portable home folder as zip, ask the user where to save it.
         """
-        
+
         Gtk.FileDialog.select_folder(
             Gtk.FileDialog.new(), None, None, self.export_all_callback
         )
@@ -546,11 +592,10 @@ class Home_page(Adw.Application):
             folder = dialog.select_folder_finish(result)
             if folder is not None:
                 selected_path = folder.get_path()
-                shutil.make_archive(selected_path + "/AppsToGo", 'zip', self.portable_home_path)
+                shutil.make_archive(
+                    selected_path + "/AppsToGo", "zip", self.portable_home_path
+                )
                 self.ui.show_toast("Exported", 3000)
         except GLib.Error as error:
             print(f"Error selecting folder: {error.message}")
             Gtk.AppChooserDialog.new()
-        
-
-        
