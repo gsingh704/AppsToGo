@@ -525,3 +525,32 @@ class Home_page(Adw.Application):
         Opens the portable home directory.
         """
         subprocess.Popen(["xdg-open", self.portable_home_path])
+
+    def export_all(self, action, param):
+        """
+        Exports all the portable home folder as zip, ask the user where to save it.
+        """
+        
+        Gtk.FileDialog.select_folder(
+            Gtk.FileDialog.new(), None, None, self.export_all_callback
+        )
+
+    def export_all_callback(self, dialog, result):
+        """
+        Callback function for the export all method.
+
+        :param dialog (Gtk.FileChooserDialog): The file dialog.
+        :param result (int): The result of the file dialog.
+        """
+        try:
+            folder = dialog.select_folder_finish(result)
+            if folder is not None:
+                selected_path = folder.get_path()
+                shutil.make_archive(selected_path + "/AppsToGo", 'zip', self.portable_home_path)
+                self.ui.show_toast("Exported", 3000)
+        except GLib.Error as error:
+            print(f"Error selecting folder: {error.message}")
+            Gtk.AppChooserDialog.new()
+        
+
+        

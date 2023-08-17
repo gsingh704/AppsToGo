@@ -3,7 +3,7 @@ script:
   - rm -rf AppDir | true
   - mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
   - cp -R src/* AppDir/
-  - cp assets/AppsToGo.svg AppDir/usr/share/icons/hicolor/256x256/apps/AppsToGo.svg
+  - cp assets/org.gurji.AppsToGo.svg  AppDir/usr/share/icons/hicolor/scalable/apps/org.gurji.AppsToGo.svg
   - apt update && apt install squashfs-tools zsync -y
 
 AppDir:
@@ -11,7 +11,7 @@ AppDir:
   app_info:
     id: org.gurji.AppsToGo
     name: AppsToGo
-    icon: AppsToGo
+    icon: org.gurji.AppsToGo.svg
     version: 0.0.2
     exec: usr/bin/python3
     exec_args: "$APPDIR/main.py $@"

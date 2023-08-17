@@ -16,6 +16,7 @@ class MyApp(Adw.Application):
     """
     The main application class for AppsToGo.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.connect("activate", self.on_activate)
@@ -47,11 +48,16 @@ class MyApp(Adw.Application):
         Creates the header menu.
         """
         menu = Gio.Menu()
+        menu.append("Export All", "app.export_all")
         menu.append("About AppsToGo", "app.about")
 
         about_action = Gio.SimpleAction.new("about", None)
         about_action.connect("activate", self.ui.about)
         self.add_action(about_action)
+
+        export_all_action = Gio.SimpleAction.new("export_all", None)
+        export_all_action.connect("activate", self.hp.export_all)
+        self.add_action(export_all_action)
 
         return menu
 

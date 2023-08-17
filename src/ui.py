@@ -1,15 +1,8 @@
-import os
-import json
-import shutil
-import subprocess
-import threading
 import gi
-import requests
-import warnings
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Gtk, Adw, GLib, Gio, GdkPixbuf
+from gi.repository import Gtk, Adw, GdkPixbuf
 
 
 class Ui(Adw.Application):
@@ -172,13 +165,14 @@ class Ui(Adw.Application):
         """
         diaolog = Adw.AboutWindow(
             application_name="AppsToGo",
-            version="0.0.2",
+            version="0.0.3",
             comments="A portable app manager",
             website="github.com/gsingh704/AppsToGo",
             developers=["Gurjant Singh"],
             license_type=Gtk.License.GPL_3_0,
             issue_url="github.com/gsingh704/AppsToGo/issues",
             transient_for=self.win,
+            application_icon="org.gurji.AppsToGo",
         )
 
         diaolog.present()
