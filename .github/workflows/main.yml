@@ -20,5 +20,5 @@ jobs:
         with:
           name: AppsToGo
           path: |
-            *.AppImage
+            AppsToGo.AppImage
             *.zsync

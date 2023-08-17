@@ -29,4 +29,5 @@ AppDir:
       - python3-requests
 
 AppImage:
+  file_name: AppsToGo.AppImage
   arch: x86_64

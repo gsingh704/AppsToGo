@@ -459,14 +459,14 @@ class Home_page(Adw.Application):
         """
         if response_id == "Yes":
             try:
-                url = "https://github.com/gsingh704/AppsToGo/releases/download/v0.0.2/AppsToGo-0.0.2-x86_64.AppImage"
+                url = "https://github.com/gsingh704/AppsToGo/releases/latest/AppsToGo.AppImage"
                 subprocess.run(["wget", url, "-P", self.portable_home_path])
                 subprocess.run(
                     [
                         "chmod",
                         "a+x",
                         os.path.join(
-                            self.portable_home_path, "AppsToGo-0.0.2-x86_64.AppImage"
+                            self.portable_home_path, "AppsToGo.AppImage"
                         ),
                     ]
                 )
