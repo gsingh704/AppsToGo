@@ -12,7 +12,7 @@ AppDir:
     id: org.gurji.AppsToGo
     name: AppsToGo
     icon: org.gurji.AppsToGo.svg
-    version: 0.0.2
+    version: 0.0.3
     exec: usr/bin/python3
     exec_args: "$APPDIR/main.py $@"
   apt:
