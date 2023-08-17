@@ -173,6 +173,12 @@ class Ui(Adw.Application):
             issue_url="github.com/gsingh704/AppsToGo/issues",
             transient_for=self.win,
             application_icon="org.gurji.AppsToGo",
+            copyright=(
+                "© 2023 Gurjant Singh\n"
+                "This program comes with ABSOLUTELY NO WARRANTY.\n"
+                "This is free software, and you are welcome to redistribute it under certain conditions.\n"
+                "See the GNU General Public License v3.0 for details."
+            ),
         )
 
         diaolog.present()
